@@ -57,7 +57,8 @@ public class App
         }
 
         
-        imageGenerationV2(img, 1, 1, 2);
+      // imageGenerationV2(img, 1, 1, 1);
+        imageGenerationV3(img,1,1);
         
         
     }
@@ -201,7 +202,7 @@ public class App
         MarkovGen<String> markov = new MarkovGen<String>(mOrder);
 
     
-        markov.train(encodedTiles);
+        markov.oneTrain(encodedTiles);
 
         for(int iterator = 0; iterator < 100; iterator++){
             
@@ -225,7 +226,7 @@ public class App
             for(int i = 0; i < height; i++){
                 System.out.print(i + "/" + height + "\r");
                 System.out.flush();
-                ArrayList<String> sequence = markov.generate(width);
+                ArrayList<String> sequence = markov.oneGen(width);
                 newEncodedTiles.addAll(sequence);
             }
             
@@ -234,6 +235,50 @@ public class App
             encodedTiles = newEncodedTiles;
         }
         
+    }
+
+    public static void imageGenerationV3(BufferedImage img, int tileDimX, int tileDimY){
+        System.out.println("Reading Image...\nWidth: " + img.getWidth() + "\nHeight: " + img.getHeight());
+        
+        System.out.println("Splitting Image into Tiles...");
+        System.out.flush();
+        tileImage(img, tileDimX, tileDimY);
+        System.out.println("Tiles Size: " + tiles.size());
+        System.out.println("Unique Tiles Size: " + uniqueTiles.size());
+
+        System.out.println("Creating Tile Map...");
+        int num = 0;
+        for(ArrayList<Integer> tile : uniqueTiles){
+            System.out.print(num + "/" + uniqueTiles.size() + "\r");
+            System.out.flush();
+            tileMap.put(Integer.toString(num), tile);
+            num++;
+        }
+
+        ArrayList<String> encodedTiles = encodeTiles(); // Encode the tiles
+
+        MarkovGen<String> markov = new MarkovGen<String>(1);
+
+        markov.oneTrain(encodedTiles);
+
+        
+        ArrayList<String> newEncodedTiles = new ArrayList<String>();
+        for(int i = 0; i < 10000; i++){
+            System.out.print(i + "/" + 10000 + "\r");
+            System.out.flush();
+            ArrayList<String> sequence = markov.oneGen(10000);
+            newEncodedTiles.addAll(sequence);
+        }
+
+        System.out.println("sequence size: " + newEncodedTiles.size());
+
+        printImageFromEncodedTiles(newEncodedTiles, tileMap, 1000, 1000, tileDimX, tileDimY, "output");
+        
+        
+
+
+
+
     }
 
     public static ArrayList<String> encodeTiles(){
