@@ -33,6 +33,8 @@ public class App
     static FileSystem sys = FileSystems.getDefault();
     static String filePath =  "img" + sys.getSeparator() +  "image.png";
 
+    
+
 
     public static ArrayList<ArrayList<Integer>> tiles = new ArrayList<ArrayList<Integer>>();
     public static HashSet<ArrayList<Integer>> uniqueTiles = new HashSet<ArrayList<Integer>>();
@@ -61,31 +63,20 @@ public class App
         int mOrder = 1;
         // imageGenerationV2(img, 1, 1, 1);
         int i = 1;
+        int iteration = 0;
         boolean flop = false;
-        while(true){
-            System.out.print("\t\t\t\tIteration: " + i + "\r");
+        int flops = 0;
+        while(iteration < 10){
+            System.out.print("\t\t\t\tIteration: " + iteration + "\r");
             System.out.flush();
-            imageGenerationV3(img,10,2,i+mOrder+1);
+            imageGenerationV3(img,50,20,10, iteration);
+            iteration++;
 
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            if(i == 50 && !flop){
-                flop = true;
-            }
-            if(i == 10 && flop){
-                flop = false;
-            }
-
-            if(flop){
-                i--;
-            }
-            else{
-                i++;
-            }
+            // try {
+            //     Thread.sleep(0);
+            // } catch (InterruptedException e) {
+            //     e.printStackTrace();
+            // }
         }
         
         
@@ -158,7 +149,7 @@ public class App
         return oldData;
     }
 
-    public static void imageGenerationV3(BufferedImage img, int tileDimX, int mOrder, int size){
+    public static void imageGenerationV3(BufferedImage img, int tileDimX, int mOrder, int size, int iteration){
         // System.out.println("Reading Image...\nWidth: " + img.getWidth() + "\nHeight: " + img.getHeight());
         int tileDimY = tileDimX;
         // System.out.println("Splitting Image into Tiles...");
@@ -187,12 +178,12 @@ public class App
         ArrayList<String> newEncodedTiles = new ArrayList<String>();
 
         int rows = size;
-        for(int i = 0; i < rows; i++){
+        for(int i = 0; i < 1; i++){
             System.out.print("rows: " + i + "/" + rows + "\r");
             System.out.flush();
             
             
-            ArrayList<String> sequence = markov.generate(rows);
+            ArrayList<String> sequence = markov.generate(rows*rows);
             newEncodedTiles.addAll(sequence);
         }
         
@@ -203,7 +194,7 @@ public class App
         
         //stitchTiles(newEncoded)
 
-        stitchTiles(newEncodedTiles, tileDimX, rows);
+        stitchTiles(newEncodedTiles, tileDimX, rows, iteration);
 
         //printImageFromEncodedTiles(newEncodedTiles, tileMap, rows*tileDimX, rows*tileDimY, tileDimX, tileDimY, "output");
         
@@ -214,7 +205,7 @@ public class App
 
     }
 
-    public static void stitchTiles(ArrayList<String> sequence, int tileWidth, int rows){
+    public static void stitchTiles(ArrayList<String> sequence, int tileWidth, int rows, int iteration){
         // iterate through the sequence, using the tileMap to get the tile for each element
         // stitch the tiles together
         // print the image
@@ -258,7 +249,7 @@ public class App
 
 
         try {
-            ImageIO.write(img, "png", new File("img" + sys.getSeparator() + "gen" + sys.getSeparator() + "output.png"));
+            ImageIO.write(img, "png", new File("img" + sys.getSeparator() + "gen" + sys.getSeparator() + "output" + iteration + ".png"));
         } catch (IOException e) {
             System.out.println("Error writing image");
         }
