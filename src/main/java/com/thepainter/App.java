@@ -18,15 +18,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import org.bytedeco.librealsense.motion_callback;
 import org.opencv.core.Core;
 
 
 
 
-/**
- * Hello world!
- *
- */
 public class App 
 {
 
@@ -42,14 +39,7 @@ public class App
 
     public static void main( String[] args )
     {
-        //Delete all files in img/tiles
-        // File tilesDir = new File("img" + sys.getSeparator() + "tiles");
-        // for(File file : tilesDir.listFiles()){
-        //     file.delete();
-        // }
 
-        
-        
 
         // Load image from file
         BufferedImage img = null;
@@ -59,30 +49,33 @@ public class App
             System.out.println("Error loading image");
         }
 
-        int resolution = 1;
-        int mOrder = 1;
-        // imageGenerationV2(img, 1, 1, 1);
-        int i = 1;
+        // Basic image info
+        int resolution = 50;
+        int mOrder = 20;
+        int size = 10;
         int iteration = 0;
-        boolean flop = false;
-        int flops = 0;
+
+        // Generate images
         while(iteration < 10){
             System.out.print("\t\t\t\tIteration: " + iteration + "\r");
             System.out.flush();
-            imageGenerationV3(img,50,20,10, iteration);
+            imageGenerationV3(img,resolution,mOrder,size, iteration);
             iteration++;
-
-            // try {
-            //     Thread.sleep(0);
-            // } catch (InterruptedException e) {
-            //     e.printStackTrace();
-            // }
         }
         
         
     }
 
-    public static void printImage(ArrayList<Integer> pixels, int width, int height, String name){
+        // Xonverts an array of pixels into a png image.
+        // pixels: The array of pixels to be converted
+        // width: The width of the image
+        // height: The height of the image
+        // name: The name of the file that the image will be saved to
+
+        // Return:
+        // None
+
+public static void printImage(ArrayList<Integer> pixels, int width, int height, String name){
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         int i = 0;
 
@@ -107,76 +100,28 @@ public class App
         }
     }
 
-    public static <E> ArrayList<E> tileSort(ArrayList<E> data, int width, int height, int tileWidth, int tileHeight){
-        ArrayList<E> newData = new ArrayList<E>();
-        int tilesX = width / tileWidth;
-        int tilesY = height / tileHeight;
-        for(int x = 0; x < tilesX; x++){
-            for(int y = 0; y < tilesY; y++){
-                for(int i = 0; i < tileWidth; i++){
-                    for(int j = 0; j < tileHeight; j++){
-                        int index = (y * tileHeight + j) * width + (x * tileWidth + i);
-                        if(index < data.size()){
-                            newData.add(data.get(index));
-                        }
-                    }
-                }
-            }
-        }
-        return newData;
-    }
-
-    public static <E> ArrayList<E> undoTileSort(ArrayList<E> data, int width, int height, int tileWidth, int tileHeight){
-        ArrayList<E> oldData = new ArrayList<E>();
-        for(int i = 0; i < width * height; i++){
-            oldData.add(null);
-        }
-        int tilesX = width / tileWidth;
-        int tilesY = height / tileHeight;
-        int index = 0;
-        for(int x = 0; x < tilesX; x++){
-            for(int y = 0; y < tilesY; y++){
-                for(int i = 0; i < tileWidth; i++){
-                    for(int j = 0; j < tileHeight; j++){
-                        if(index < data.size()){
-                            int oldIndex = (y * tileHeight + j) * width + (x * tileWidth + i);
-                            oldData.set(oldIndex, data.get(index++));
-                        }
-                    }
-                }
-            }
-        }
-        return oldData;
-    }
 
     public static void imageGenerationV3(BufferedImage img, int tileDimX, int mOrder, int size, int iteration){
-        // System.out.println("Reading Image...\nWidth: " + img.getWidth() + "\nHeight: " + img.getHeight());
         int tileDimY = tileDimX;
-        // System.out.println("Splitting Image into Tiles...");
-        // System.out.flush();
         tileImage(img, tileDimX, tileDimY);
-        // System.out.println("Tiles Size: " + tiles.size());
-        // System.out.println("Unique Tiles Size: " + uniqueTiles.size());
 
-        // System.out.println("Creating Tile Map...");
         int num = 0;
         for(ArrayList<Integer> tile : uniqueTiles){
-            // System.out.print(num + "/" + uniqueTiles.size() + "\r");
-            // System.out.flush();
             tileMap.put(Integer.toString(num), tile);
             num++;
         }
 
         ArrayList<String> encodedTiles = encodeTiles(); // Encode the tiles
-        //encodedTiles = tileSort(encodedTiles, img.getWidth(), img.getHeight(), tileDimX, tileDimY); // Sort the tiles
 
         MarkovGen<String> markov = new MarkovGen<String>(mOrder);
 
+        //train
         markov.train(encodedTiles);
 
         
         ArrayList<String> newEncodedTiles = new ArrayList<String>();
 
+        //generate
         int rows = size;
         for(int i = 0; i < 1; i++){
             System.out.print("rows: " + i + "/" + rows + "\r");
@@ -188,19 +133,8 @@ public class App
         }
         
 
-        
-        
-        //newEncodedTiles = undoTileSort(newEncodedTiles, rows*tileDimX, rows*tileDimX, tileDimX, tileDimY); // Undo the tile sort
-        
-        //stitchTiles(newEncoded)
-
+        //stich the tiles together
         stitchTiles(newEncodedTiles, tileDimX, rows, iteration);
-
-        //printImageFromEncodedTiles(newEncodedTiles, tileMap, rows*tileDimX, rows*tileDimY, tileDimX, tileDimY, "output");
-        
-        
-
-
 
 
     }
@@ -255,6 +189,7 @@ public class App
         }
     }
 
+    // Rotates an image by a random angle
     public static BufferedImage rotate(BufferedImage bimg) {
         int w = bimg.getWidth();
         int h = bimg.getHeight();
@@ -268,7 +203,7 @@ public class App
     }
 
     
-
+    // Returns an arraylist of tiles from an image
     public static ArrayList<String> encodeTiles(){
         // System.out.println("Encoding Tiles...");
 
@@ -298,6 +233,7 @@ public class App
         return encodedTiles;
     }
 
+    // Prints an image from an arraylist of encoded tiles
     public static void printImageFromEncodedTiles(ArrayList<String> encodedTiles, HashMap<String, ArrayList<Integer>> tileMap, int width, int height, int tileDimX, int tileDimY, String name){
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     
@@ -332,8 +268,6 @@ public class App
         tiles = new ArrayList<ArrayList<Integer>>();
 
         for(int x = 0; x < img.getWidth(); x += tileDimX){
-            // System.out.print(x + "/" + img.getWidth() + "\r");
-            // System.out.flush();
             for(int y = 0; y < img.getHeight(); y += tileDimY){
                 ArrayList<Integer> tile = new ArrayList<Integer>();
                 for(int i = 0; i < tileDimX; i++){
@@ -349,6 +283,7 @@ public class App
         }
     }
 
+    // Returns an arraylist of tiles from an image
     public static ArrayList<ArrayList<Integer>> scanUniqueTiles(ArrayList<ArrayList<Integer>> tiles){
          //Remove Duplicate Tiles
         ArrayList<ArrayList<Integer>> uniqueTiles = new ArrayList<ArrayList<Integer>>();
